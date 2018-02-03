@@ -34,7 +34,7 @@ def main(player_key):
 
 def greedy(opponent_map, energy):
     #Range opponent_map 0 <= x <= 99
-    i = 1
+    i = 0
     isFoundValid = False
     while (i < 100) and (not isFoundValid):
         cell = opponent_map[i]
@@ -78,11 +78,7 @@ def greedy(opponent_map, energy):
                         isFoundValid = True
                         valid_cell = cell_bawah['X'], cell_bawah['Y']
 
-        i+=2
-
-        #Untuk menyesuaikan checker
-        if (i % 10) == 1:
-            i-=1
+        i+=1
     output_shot(*valid_cell)
     return
 
