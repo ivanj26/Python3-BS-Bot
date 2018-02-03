@@ -1,7 +1,6 @@
 import argparse
 import json
 import os
-from random import choice
 
 command_file = "command.txt"
 place_ship_file = "place.txt"
@@ -19,7 +18,74 @@ def main(player_key):
     if state['Phase'] == 1:
         place_ships()
     else:
-        fire_shot(state['OpponentMap']['Cells'])
+        greedy(state['OpponentMap']['Cells'], state['PlayerMap']['Owner']['Energy'])
+
+# def fire_shot(opponent_map):
+#     # To send through a command please pass through the following <code>,<x>,<y>
+#     targets = []
+#     for cell in opponent_map:
+#         if not cell['Damaged'] and not cell['Missed']:
+#             valid_cell = cell['X'], cell['Y']
+#             targets.append(valid_cell)
+#     target = choice(targets)
+#     output_shot(*target)
+#     return
+
+
+def greedy(opponent_map, energy):
+    #Range opponent_map 0 <= x <= 99
+    i = 1
+    isFoundValid = False
+    while (i < 100) and (not isFoundValid):
+        cell = opponent_map[i]
+
+        #Checker Mode
+        if ((cell['X'] % 2 == 0) and (cell['Y'] % 2 == 0)) or ((cell['X'] % 2 == 1) and (cell['Y'] % 2 == 1)):
+            '''
+                Check: bila pernah ada kapal yang terkena di titik (x,y) 
+                      maka check kanan, kiri, bawah, atas
+            '''
+
+            if (not cell['Damaged']) and (not cell['Missed']):
+                isFoundValid = True
+                valid_cell = cell['X'], cell['Y']
+            elif (cell['Damaged']): #Bila (x,y) pernah hit
+                #check atas
+                if (i % 10) != 9:
+                    cell_atas = opponent_map[i-10]
+                    if (not cell_atas['Damaged']) and (not cell_atas['Missed']):
+                        isFoundValid = True
+                        valid_cell = cell_atas['X'], cell_atas['Y']
+
+                #check kiri
+                if (i / 10) >= 1 and not(isFoundValid):
+                    cell_kiri = opponent_map[i-1]
+                    if (not cell_kiri['Damaged']) and (not cell_kiri['Missed']):
+                        isFoundValid = True
+                        valid_cell = cell_kiri['X'], cell_kiri['Y']
+
+                #check kanan
+                if (i+10) < 100 and not(isFoundValid):
+                    cell_kanan = opponent_map[i + 1]
+                    if (not cell_kanan['Damaged']) and (not cell_kanan['Missed']):
+                        isFoundValid = True
+                        valid_cell = cell_kanan['X'], cell_kanan['Y']
+
+                #check bawah
+                if (i % 10) != 0 and not(isFoundValid):
+                    cell_bawah = opponent_map[i + 1]
+                    if (not cell_bawah['Damaged']) and (not cell_bawah['Missed']):
+                        isFoundValid = True
+                        valid_cell = cell_bawah['X'], cell_bawah['Y']
+
+        i+=2
+
+        #Untuk menyesuaikan checker
+        if (i % 10) == 1:
+            i-=1
+    output_shot(*valid_cell)
+    return
+
 
 
 def output_shot(x, y):
@@ -28,12 +94,12 @@ def output_shot(x, y):
 
     #(Energy = 0)                    0 = Do Nothing
     #(Energy = 1 , All Ships)        1 = fire shot - Fires a shot given a center location
-    #(Energy = 8 ronde, Destroyer)   2 = fire double shot vertical
-    #(Energy = 10 ronde, Carrier)    3 = fire corner shot horizontal - Fires two shots given a center location
-    #(Energy = 10 ronde, Carrier)    4 = fire corner shot - Fires four shots given a center location
-    #(Energy = 14 ronde, Cruiser)    5 = fire horizontal cross shot - Fires five shots given a center location
-    #(Energy = 12 ronde, Battleship) 6 = fire diagonal cross shot - Fires five shots given a center location
-    #(Energy = 10 ronde, Submarine)  7 = fire seeker missile - Finds the nearst ship with an euclidian distance of 2 units or less away, given a center location
+    #(Energy = 24, Destroyer)        2 = fire double shot vertical
+    #(Energy = 30, Carrier)          3 = fire corner shot horizontal - Fires two shots given a center location
+    #(Energy = 30, Carrier)          4 = fire corner shot - Fires four shots given a center location
+    #(Energy = 42, Cruiser)          5 = fire horizontal cross shot - Fires five shots given a center location
+    #(Energy = 36, Battleship)       6 = fire diagonal cross shot - Fires five shots given a center location
+    #(Energy = 36, Submarine)        7 = fire seeker missile - Finds the nearst ship with an euclidian distance of 2 units or less away, given a center location
     #(Energy = ?)                    8 = place shield
 
     '''
@@ -51,18 +117,6 @@ def output_shot(x, y):
         f_out.write('{},{},{}'.format(move, x, y))
         f_out.write('\n')
     pass
-
-
-def fire_shot(opponent_map):
-    # To send through a command please pass through the following <code>,<x>,<y>
-    targets = []
-    for cell in opponent_map:
-        if not cell['Damaged'] and not cell['Missed']:
-            valid_cell = cell['X'], cell['Y']
-            targets.append(valid_cell)
-    target = choice(targets)
-    output_shot(*target)
-    return
 
 
 def place_ships():
