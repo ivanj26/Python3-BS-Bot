@@ -23,7 +23,30 @@ def main(player_key):
 
 
 def output_shot(x, y):
-    move = 1  # 1=fire shot command code
+    #Possible code buat nembak (ganti nilai move):
+    #(Berapa Energy-nya, Kapal apa yang bisa gunain)
+
+    #(Energy = 0)                    0 = Do Nothing
+    #(Energy = 1 , All Ships)        1 = fire shot - Fires a shot given a center location
+    #(Energy = 8 ronde, Destroyer)   2 = fire double shot vertical
+    #(Energy = 10 ronde, Carrier)    3 = fire corner shot horizontal - Fires two shots given a center location
+    #(Energy = 10 ronde, Carrier)    4 = fire corner shot - Fires four shots given a center location
+    #(Energy = 14 ronde, Cruiser)    5 = fire horizontal cross shot - Fires five shots given a center location
+    #(Energy = 12 ronde, Battleship) 6 = fire diagonal cross shot - Fires five shots given a center location
+    #(Energy = 10 ronde, Submarine)  7 = fire seeker missile - Finds the nearst ship with an euclidian distance of 2 units or less away, given a center location
+    #(Energy = ?)                    8 = place shield
+
+    '''
+    #Shield Rules (Placement):
+    :param <x: pos>:
+    :param <y: pos>:
+    To Place a shield you have to pass through the following command:
+        8,<x:pos>,<y:pos> where the x and y pos are the center points of the shield.
+    When a shield is hit, it will show an '@' symbol where the shot landed on the respective map while the shield is active.
+    When the shield expires there will be no history where any shots landed.
+    '''
+
+    move = 1
     with open(os.path.join(output_path, command_file), 'w') as f_out:
         f_out.write('{},{},{}'.format(move, x, y))
         f_out.write('\n')
@@ -32,8 +55,6 @@ def output_shot(x, y):
 
 def fire_shot(opponent_map):
     # To send through a command please pass through the following <code>,<x>,<y>
-    # Possible codes: 1 - Fireshot, 0 - Do Nothing (please pass through coordinates if
-    #  code 1 is your choice)
     targets = []
     for cell in opponent_map:
         if not cell['Damaged'] and not cell['Missed']:
