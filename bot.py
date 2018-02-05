@@ -40,7 +40,7 @@ def greedy(opponent_map, energy):
         cell = opponent_map[i]
 
         #Checker Mode
-        if ((cell['X'] % 2 == 0) and (cell['Y'] % 2 == 0)) or ((cell['X'] % 2 == 1) and (cell['Y'] % 2 == 1)):
+        if (((cell['X'] % 2 == 0) and (cell['Y'] % 2 == 0)) or ((cell['X'] % 2 == 1) and (cell['Y'] % 2 == 1))):
             '''
                 Check: bila pernah ada kapal yang terkena di titik (x,y) 
                       maka check kanan, kiri, bawah, atas
@@ -77,8 +77,10 @@ def greedy(opponent_map, energy):
                     if (not cell_bawah['Damaged']) and (not cell_bawah['Missed']):
                         isFoundValid = True
                         valid_cell = cell_bawah['X'], cell_bawah['Y']
-
         i+=1
+        if (i % 10 == 0):
+            i+=1
+
     output_shot(*valid_cell)
     return
 
