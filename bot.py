@@ -7,6 +7,18 @@ place_ship_file = "place.txt"
 game_state_file = "state.json"
 output_path = '.'
 map_size = 0
+text = ""
+
+def write_file(text):
+	f = open("res.txt",'w')
+	f.write(text)
+	f.close()
+
+def read_file():
+	global text
+	f = open("res.txt",'r')
+	text = f.read()
+	f.close()
 
 
 def main(player_key):
@@ -50,30 +62,31 @@ def greedy(opponent_map, energy):
                 isFoundValid = True
                 valid_cell = cell['X'], cell['Y']
             elif (cell['Damaged']): #Bila (x,y) pernah hit
+            	# write_file(cell['X'], cell['Y'])
                 #check atas
                 if (i % 10) != 9:
-                    cell_atas = opponent_map[i-10]
+                    cell_atas = opponent_map[i+1]
                     if (not cell_atas['Damaged']) and (not cell_atas['Missed']):
                         isFoundValid = True
                         valid_cell = cell_atas['X'], cell_atas['Y']
 
                 #check kiri
                 if (i / 10) >= 1 and not(isFoundValid):
-                    cell_kiri = opponent_map[i-1]
+                    cell_kiri = opponent_map[i-10]
                     if (not cell_kiri['Damaged']) and (not cell_kiri['Missed']):
                         isFoundValid = True
                         valid_cell = cell_kiri['X'], cell_kiri['Y']
 
                 #check kanan
                 if (i+10) < 100 and not(isFoundValid):
-                    cell_kanan = opponent_map[i + 1]
+                    cell_kanan = opponent_map[i + 10]
                     if (not cell_kanan['Damaged']) and (not cell_kanan['Missed']):
                         isFoundValid = True
                         valid_cell = cell_kanan['X'], cell_kanan['Y']
 
                 #check bawah
                 if (i % 10) != 0 and not(isFoundValid):
-                    cell_bawah = opponent_map[i + 1]
+                    cell_bawah = opponent_map[i - 1]
                     if (not cell_bawah['Damaged']) and (not cell_bawah['Missed']):
                         isFoundValid = True
                         valid_cell = cell_bawah['X'], cell_bawah['Y']
