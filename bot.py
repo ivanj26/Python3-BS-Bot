@@ -8,18 +8,18 @@ game_state_file = "state.json"
 output_path = '.'
 map_size = 0
 attackTo = 'attackTo.txt' #isi file : <x>;<y>;<direction>;
-firstAttack = 'firstAttack.txt' #isi file: <nilai i>
+attacked = 'attacked.txt' #isi file: <nilai i>
 
 def write_file(x,y,direction):
     f_out = open(attackTo, 'w')
-    f_out.write('{};{};{};'.format(x, y, direction))
+    f_out.write("{};{};{}".format(x, y, direction))
     f_out.close()
 
 # ------Ini buat nyatet pertama kali dia serang, biar bisa backtrack-------
-# def write_i_as_firstAttack(i):
-#     f_out = open(firstAttack, 'w')
-#     f_out.write('{};'.format(i))
-#     f_out.close()
+def write_i(i):
+    f_out = open(attacked, 'w')
+    f_out.write(i)
+    f_out.close()
 
 
 def read_file():
@@ -31,6 +31,13 @@ def read_file():
         direction = fields[2]
     f_in.close()
     return (x, y, direction)
+
+def read_i():
+    f_in = open(attackTo,'r')
+    i = f_in.read()
+    i = int(i)
+    f_in.close()
+    return (i)
 
 
 def main(player_key):
@@ -67,7 +74,7 @@ def greedy(opponent_map, energy, points):
         (x,y,direction) = read_file()
         if (direction != 'Unknown'):
             isCheckerMode = False
-        if (x != 999 and y != 999): #dummy x dan y
+        if (x != -999 and y != -999): #dummy x dan y
             i = x*10 + y
 
     while (i < 100) and (not isFoundValid):
@@ -84,14 +91,13 @@ def greedy(opponent_map, energy, points):
                 isFoundValid = True
                 valid_cell = cell['X'], cell['Y']
             elif (cell['Damaged']): #Bila (x,y) pernah hit (pertama kali kena), direction masih 'Unknown'
-                write_file(int(cell['X']), int(cell['Y']), 'Unknown')
+                write_file(cell['X'], cell['Y'], 'Unknown')
                 #check atas
                 if (i % 10) != 9:
                     cell_atas = opponent_map[i+1]
                     if cell_atas['Damaged']:
                         x = int(cell_atas['X'])
                         y = int(cell_atas['Y'])
-                        i = x * 10 + y
                         direction = 'North'
                         isCheckerMode = False
                     elif (not cell_atas['Damaged']) and (not cell_atas['Missed']):
@@ -112,7 +118,7 @@ def greedy(opponent_map, energy, points):
                         valid_cell = cell_kiri['X'], cell_kiri['Y']
 
                 #check kanan
-                if (i+10) < 100 and not(isFoundValid):
+                if (i + 10) < 100 and not(isFoundValid):
                     cell_kanan = opponent_map[i + 10]
                     if cell_kanan['Damaged']:
                         x = int(cell_kanan['X'])
@@ -165,7 +171,7 @@ def greedy(opponent_map, energy, points):
                     i-=1
             cell = opponent_map[i]
             if (not cell['Damaged'] and not cell['Missed']):
-                write_file(int(cell['X']), int(cell['Y']), direction)
+                write_file(cell['X'], cell['Y'], direction)
                 valid_cell = cell['X'], cell['Y']
                 isFoundValid = True
         i+=1
