@@ -12,13 +12,13 @@ attacked = 'attacked.txt' #isi file: <nilai i>
 
 def write_file(x,y,direction):
     f_out = open(attackTo, 'w')
-    f_out.write("{};{};{}".format(x, y, direction))
+    f_out.write("{};{};{};".format(x, y, direction))
     f_out.close()
 
 # ------Ini buat nyatet pertama kali dia serang, biar bisa backtrack-------
 def write_i(i):
     f_out = open(attacked, 'w')
-    f_out.write(i)
+    f_out.write(str(i))
     f_out.close()
 
 
@@ -33,11 +33,11 @@ def read_file():
     return (x, y, direction)
 
 def read_i():
-    f_in = open(attackTo,'r')
+    f_in = open(attacked,'r')
     i = f_in.read()
     i = int(i)
     f_in.close()
-    return (i)
+    return i
 
 
 def main(player_key):
@@ -74,8 +74,10 @@ def greedy(opponent_map, energy, points):
         (x,y,direction) = read_file()
         if (direction != 'Unknown'):
             isCheckerMode = False
-        if (x != -999 and y != -999): #dummy x dan y
+        if (x != 999): #dummy x dan y
             i = x*10 + y
+        else:
+            i = read_i()
 
     while (i < 100) and (not isFoundValid):
         cell = opponent_map[i]
@@ -96,8 +98,10 @@ def greedy(opponent_map, energy, points):
                 if (i % 10) != 9:
                     cell_atas = opponent_map[i+1]
                     if cell_atas['Damaged']:
+                        write_i(i)
                         x = int(cell_atas['X'])
                         y = int(cell_atas['Y'])
+                        i = x * 10 + y
                         direction = 'North'
                         isCheckerMode = False
                     elif (not cell_atas['Damaged']) and (not cell_atas['Missed']):
@@ -105,9 +109,10 @@ def greedy(opponent_map, energy, points):
                         valid_cell = cell_atas['X'], cell_atas['Y']
 
                 #check kiri
-                if (i / 10) >= 1 and not(isFoundValid):
+                if (i / 10) >= 1 and not(isFoundValid) and isCheckerMode:
                     cell_kiri = opponent_map[i-10]
                     if cell_kiri['Damaged']:
+                        write_i(i)
                         x = int(cell_kiri['X'])
                         y = int(cell_kiri['Y'])
                         i = x * 10 + y
@@ -118,9 +123,10 @@ def greedy(opponent_map, energy, points):
                         valid_cell = cell_kiri['X'], cell_kiri['Y']
 
                 #check kanan
-                if (i + 10) < 100 and not(isFoundValid):
+                if (i + 10) < 100 and not(isFoundValid) and isCheckerMode:
                     cell_kanan = opponent_map[i + 10]
                     if cell_kanan['Damaged']:
+                        write_i(i)
                         x = int(cell_kanan['X'])
                         y = int(cell_kanan['Y'])
                         i = x * 10 + y
@@ -131,9 +137,10 @@ def greedy(opponent_map, energy, points):
                         valid_cell = cell_kanan['X'], cell_kanan['Y']
 
                 #check bawah
-                if (i % 10) != 0 and not(isFoundValid):
+                if (i % 10) != 0 and not(isFoundValid) and isCheckerMode:
                     cell_bawah = opponent_map[i - 1]
                     if cell_bawah['Damaged']:
+                        write_i(i)
                         x = int(cell_bawah['X'])
                         y = int(cell_bawah['Y'])
                         i = x*10 + y
@@ -143,37 +150,52 @@ def greedy(opponent_map, energy, points):
                         isFoundValid = True
                         valid_cell = cell_bawah['X'], cell_bawah['Y']
 
-        #!CheckerMode -> Aggresive Mode (Nyerang terus sesuai direction yang ada & direction ga mungkin 'Unknown')
+        #!CheckerMode -> Aggresive Mode (Nyerang beruntun sesuai direction yang ada & direction ga mungkin 'Unknown')
         if (not isCheckerMode):
             if (direction == 'North'):
                 if (i % 10 == 9):
                     isCheckerMode = True
-                    write_file(-999,-999,'Unknown')
                 else:
-                    i+=1
+                    if (opponent_map[i]['Missed']):
+                        isCheckerMode = True
+                        write_i(i)
+                    else:
+                        i += 1
             elif (direction == 'West'):
                 if (i / 10) < 1:
-                    #masih dipikirin
-                    pass
+                    isCheckerMode = True
                 else:
-                    i-=10
+                    if (opponent_map[i]['Missed']):
+                        isCheckerMode = True
+                    else:
+                        i -= 10
             elif (direction == 'East'):
                 if (i+10) >= 100:
-                    # masih dipikirin
-                    pass
+                    isCheckerMode = True
                 else:
-                    i+=10
+                    if (opponent_map[i]['Missed']):
+                        isCheckerMode = True
+                    else:
+                        i += 10
             elif (direction == 'South'):
                 if (i % 10 == 0):
-                    # masih dipikirin
-                    pass
+                    isCheckerMode = True
                 else:
-                    i-=1
-            cell = opponent_map[i]
-            if (not cell['Damaged'] and not cell['Missed']):
-                write_file(cell['X'], cell['Y'], direction)
-                valid_cell = cell['X'], cell['Y']
-                isFoundValid = True
+                    if (opponent_map[i]['Missed']):
+                        isCheckerMode = True
+                    else:
+                        i -= 1
+            if (not isCheckerMode):
+                cell = opponent_map[i]
+                if (not cell['Damaged'] and not cell['Missed']):
+                    write_file(cell['X'], cell['Y'], direction)
+                    valid_cell = cell['X'], cell['Y']
+                    isFoundValid = True
+            else:
+                if (direction != 'North'):
+                    i = read_i()
+                write_file(999, 999, 'Unknown')
+
         i+=1
     output_shot(*valid_cell)
     return
