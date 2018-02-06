@@ -7,18 +7,30 @@ place_ship_file = "place.txt"
 game_state_file = "state.json"
 output_path = '.'
 map_size = 0
-text = ""
+attackTo = 'attackTo.txt' #isi file : <x>;<y>;<direction>;
+firstAttack = 'firstAttack.txt' #isi file: <nilai i>
 
-def write_file(text):
-	f = open("res.txt",'w')
-	f.write(text)
-	f.close()
+def write_file(x,y,direction):
+    f_out = open(attackTo, 'w')
+    f_out.write('{};{};{};'.format(x, y, direction))
+    f_out.close()
+
+# ------Ini buat nyatet pertama kali dia serang, biar bisa backtrack-------
+# def write_i_as_firstAttack(i):
+#     f_out = open(firstAttack, 'w')
+#     f_out.write('{};'.format(i))
+#     f_out.close()
+
 
 def read_file():
-	global text
-	f = open("res.txt",'r')
-	text = f.read()
-	f.close()
+    f_in = open(attackTo,'r')
+    for char in f_in:
+        fields = char.split(';')
+        x = int(fields[0])
+        y = int(fields[1])
+        direction = fields[2]
+    f_in.close()
+    return (x, y, direction)
 
 
 def main(player_key):
@@ -30,7 +42,7 @@ def main(player_key):
     if state['Phase'] == 1:
         place_ships()
     else:
-        greedy(state['OpponentMap']['Cells'], state['PlayerMap']['Owner']['Energy'])
+        greedy(state['OpponentMap']['Cells'], state['PlayerMap']['Owner']['Energy'], state['PlayerMap']['Owner']['Points'])
 
 # def fire_shot(opponent_map):
 #     # To send through a command please pass through the following <code>,<x>,<y>
@@ -44,15 +56,25 @@ def main(player_key):
 #     return
 
 
-def greedy(opponent_map, energy):
+def greedy(opponent_map, energy, points):
+    #Sementara ini ada dua mode -> 1. Checker Mode , 2. Aggresive Mode (!CheckerMode)
     #Range opponent_map 0 <= x <= 99
     i = 0
     isFoundValid = False
+    isCheckerMode = True
+
+    if (os.path.isfile(attackTo)):
+        (x,y,direction) = read_file()
+        if (direction != 'Unknown'):
+            isCheckerMode = False
+        if (x != 999 and y != 999): #dummy x dan y
+            i = x*10 + y
+
     while (i < 100) and (not isFoundValid):
         cell = opponent_map[i]
 
         #Checker Mode
-        if (((cell['X'] % 2 == 0) and (cell['Y'] % 2 == 0)) or ((cell['X'] % 2 == 1) and (cell['Y'] % 2 == 1))):
+        if (((cell['X'] % 2 == 0) and (cell['Y'] % 2 == 0)) or ((cell['X'] % 2 == 1) and (cell['Y'] % 2 == 1)) and isCheckerMode):
             '''
                 Check: bila pernah ada kapal yang terkena di titik (x,y) 
                       maka check kanan, kiri, bawah, atas
@@ -61,39 +83,92 @@ def greedy(opponent_map, energy):
             if (not cell['Damaged']) and (not cell['Missed']):
                 isFoundValid = True
                 valid_cell = cell['X'], cell['Y']
-            elif (cell['Damaged']): #Bila (x,y) pernah hit
-            	# write_file(cell['X'], cell['Y'])
+            elif (cell['Damaged']): #Bila (x,y) pernah hit (pertama kali kena), direction masih 'Unknown'
+                write_file(int(cell['X']), int(cell['Y']), 'Unknown')
                 #check atas
                 if (i % 10) != 9:
                     cell_atas = opponent_map[i+1]
-                    if (not cell_atas['Damaged']) and (not cell_atas['Missed']):
+                    if cell_atas['Damaged']:
+                        x = int(cell_atas['X'])
+                        y = int(cell_atas['Y'])
+                        i = x * 10 + y
+                        direction = 'North'
+                        isCheckerMode = False
+                    elif (not cell_atas['Damaged']) and (not cell_atas['Missed']):
                         isFoundValid = True
                         valid_cell = cell_atas['X'], cell_atas['Y']
 
                 #check kiri
                 if (i / 10) >= 1 and not(isFoundValid):
                     cell_kiri = opponent_map[i-10]
-                    if (not cell_kiri['Damaged']) and (not cell_kiri['Missed']):
+                    if cell_kiri['Damaged']:
+                        x = int(cell_kiri['X'])
+                        y = int(cell_kiri['Y'])
+                        i = x * 10 + y
+                        direction = 'West'
+                        isCheckerMode = False
+                    elif (not cell_kiri['Damaged']) and (not cell_kiri['Missed']):
                         isFoundValid = True
                         valid_cell = cell_kiri['X'], cell_kiri['Y']
 
                 #check kanan
                 if (i+10) < 100 and not(isFoundValid):
                     cell_kanan = opponent_map[i + 10]
-                    if (not cell_kanan['Damaged']) and (not cell_kanan['Missed']):
+                    if cell_kanan['Damaged']:
+                        x = int(cell_kanan['X'])
+                        y = int(cell_kanan['Y'])
+                        i = x * 10 + y
+                        direction = 'East'
+                        isCheckerMode = False
+                    elif (not cell_kanan['Damaged']) and (not cell_kanan['Missed']):
                         isFoundValid = True
                         valid_cell = cell_kanan['X'], cell_kanan['Y']
 
                 #check bawah
                 if (i % 10) != 0 and not(isFoundValid):
                     cell_bawah = opponent_map[i - 1]
-                    if (not cell_bawah['Damaged']) and (not cell_bawah['Missed']):
+                    if cell_bawah['Damaged']:
+                        x = int(cell_bawah['X'])
+                        y = int(cell_bawah['Y'])
+                        i = x*10 + y
+                        direction = 'South'
+                        isCheckerMode = False
+                    elif  (not cell_bawah['Damaged']) and (not cell_bawah['Missed']):
                         isFoundValid = True
                         valid_cell = cell_bawah['X'], cell_bawah['Y']
-        i+=1
-        if (i % 10 == 0):
-            i+=1
 
+        #!CheckerMode -> Aggresive Mode (Nyerang terus sesuai direction yang ada & direction ga mungkin 'Unknown')
+        if (not isCheckerMode):
+            if (direction == 'North'):
+                if (i % 10 == 9):
+                    isCheckerMode = True
+                    write_file(-999,-999,'Unknown')
+                else:
+                    i+=1
+            elif (direction == 'West'):
+                if (i / 10) < 1:
+                    #masih dipikirin
+                    pass
+                else:
+                    i-=10
+            elif (direction == 'East'):
+                if (i+10) >= 100:
+                    # masih dipikirin
+                    pass
+                else:
+                    i+=10
+            elif (direction == 'South'):
+                if (i % 10 == 0):
+                    # masih dipikirin
+                    pass
+                else:
+                    i-=1
+            cell = opponent_map[i]
+            if (not cell['Damaged'] and not cell['Missed']):
+                write_file(int(cell['X']), int(cell['Y']), direction)
+                valid_cell = cell['X'], cell['Y']
+                isFoundValid = True
+        i+=1
     output_shot(*valid_cell)
     return
 
