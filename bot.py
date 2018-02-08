@@ -2,6 +2,8 @@ import argparse
 import json
 import os
 
+from random import choice
+
 command_file = "command.txt"
 place_ship_file = "place.txt"
 game_state_file = "state.json"
@@ -47,6 +49,11 @@ def main(player_key):
         state = json.load(f_in)
     map_size = state['MapDimension']
     if state['Phase'] == 1:
+        #hapus file eksternal saat phase1 (jika ada)
+        if (os.path.isfile(attackTo)):
+            os.remove(attackTo)
+        if (os.path.isfile(attacked)):
+            os.remove(attacked)
         place_ships()
     else:
         greedy(state['OpponentMap']['Cells'], state['PlayerMap']['Owner']['Energy'], state['PlayerMap']['Owner']['Points'])
@@ -75,11 +82,11 @@ def greedy(opponent_map, energy, points):
         if (direction != 'Unknown'):
             isCheckerMode = False
         if (x != 999): #dummy x dan y
-            i = x*10 + y
+            i = x*map_size + y
         else:
             i = read_i()
 
-    while (i < 100) and (not isFoundValid):
+    while (i < (map_size * map_size)) and (not isFoundValid):
         cell = opponent_map[i]
 
         #Checker Mode
@@ -95,13 +102,13 @@ def greedy(opponent_map, energy, points):
             elif (cell['Damaged']): #Bila (x,y) pernah hit (pertama kali kena), direction masih 'Unknown'
                 write_file(cell['X'], cell['Y'], 'Unknown')
                 #check atas
-                if (i % 10) != 9:
+                if ((i % map_size) != (map_size-1)):
                     cell_atas = opponent_map[i+1]
                     if cell_atas['Damaged']:
                         write_i(i)
                         x = int(cell_atas['X'])
                         y = int(cell_atas['Y'])
-                        i = x * 10 + y
+                        i = x * map_size + y
                         direction = 'North'
                         isCheckerMode = False
                     elif (not cell_atas['Damaged']) and (not cell_atas['Missed']):
@@ -109,13 +116,13 @@ def greedy(opponent_map, energy, points):
                         valid_cell = cell_atas['X'], cell_atas['Y']
 
                 #check kiri
-                if (i / 10) >= 1 and not(isFoundValid) and isCheckerMode:
-                    cell_kiri = opponent_map[i-10]
+                if (i / map_size) >= 1 and not(isFoundValid) and isCheckerMode:
+                    cell_kiri = opponent_map[i-map_size]
                     if cell_kiri['Damaged']:
                         write_i(i)
                         x = int(cell_kiri['X'])
                         y = int(cell_kiri['Y'])
-                        i = x * 10 + y
+                        i = x * map_size + y
                         direction = 'West'
                         isCheckerMode = False
                     elif (not cell_kiri['Damaged']) and (not cell_kiri['Missed']):
@@ -123,13 +130,13 @@ def greedy(opponent_map, energy, points):
                         valid_cell = cell_kiri['X'], cell_kiri['Y']
 
                 #check kanan
-                if (i + 10) < 100 and not(isFoundValid) and isCheckerMode:
-                    cell_kanan = opponent_map[i + 10]
+                if ((i + map_size) < (map_size * map_size)) and not(isFoundValid) and isCheckerMode:
+                    cell_kanan = opponent_map[i + map_size]
                     if cell_kanan['Damaged']:
                         write_i(i)
                         x = int(cell_kanan['X'])
                         y = int(cell_kanan['Y'])
-                        i = x * 10 + y
+                        i = x * map_size + y
                         direction = 'East'
                         isCheckerMode = False
                     elif (not cell_kanan['Damaged']) and (not cell_kanan['Missed']):
@@ -137,13 +144,13 @@ def greedy(opponent_map, energy, points):
                         valid_cell = cell_kanan['X'], cell_kanan['Y']
 
                 #check bawah
-                if (i % 10) != 0 and not(isFoundValid) and isCheckerMode:
+                if (i % map_size) != 0 and not(isFoundValid) and isCheckerMode:
                     cell_bawah = opponent_map[i - 1]
                     if cell_bawah['Damaged']:
                         write_i(i)
                         x = int(cell_bawah['X'])
                         y = int(cell_bawah['Y'])
-                        i = x*10 + y
+                        i = x * map_size + y
                         direction = 'South'
                         isCheckerMode = False
                     elif  (not cell_bawah['Damaged']) and (not cell_bawah['Missed']):
@@ -153,7 +160,7 @@ def greedy(opponent_map, energy, points):
         #!CheckerMode -> Aggresive Mode (Nyerang beruntun sesuai direction yang ada & direction ga mungkin 'Unknown')
         if (not isCheckerMode):
             if (direction == 'North'):
-                if (i % 10 == 9):
+                if (i % map_size == (map_size-1)):
                     isCheckerMode = True
                 else:
                     if (opponent_map[i]['Missed']):
@@ -162,23 +169,23 @@ def greedy(opponent_map, energy, points):
                     else:
                         i += 1
             elif (direction == 'West'):
-                if (i / 10) < 1:
+                if (i / map_size) < 1:
                     isCheckerMode = True
                 else:
                     if (opponent_map[i]['Missed']):
                         isCheckerMode = True
                     else:
-                        i -= 10
+                        i -= map_size
             elif (direction == 'East'):
-                if (i+10) >= 100:
+                if ((i+map_size) >= (map_size*map_size)):
                     isCheckerMode = True
                 else:
                     if (opponent_map[i]['Missed']):
                         isCheckerMode = True
                     else:
-                        i += 10
+                        i += map_size
             elif (direction == 'South'):
-                if (i % 10 == 0):
+                if (i % map_size == 0):
                     isCheckerMode = True
                 else:
                     if (opponent_map[i]['Missed']):
@@ -197,6 +204,15 @@ def greedy(opponent_map, energy, points):
                 write_file(999, 999, 'Unknown')
 
         i+=1
+
+    if (i >= map_size*map_size):
+        targets = []
+        for cell in opponent_map:
+            if not cell['Damaged'] and not cell['Missed']:
+                valid_cell = cell['X'], cell['Y']
+                targets.append(valid_cell)
+        valid_cell = choice(targets)
+
     output_shot(*valid_cell)
     return
 
