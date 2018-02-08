@@ -101,8 +101,23 @@ def greedy(opponent_map, energy, points):
                 valid_cell = cell['X'], cell['Y']
             elif (cell['Damaged']): #Bila (x,y) pernah hit (pertama kali kena), direction masih 'Unknown'
                 write_file(cell['X'], cell['Y'], 'Unknown')
+
+                #check bawah
+                if (i % map_size) != 0:
+                    cell_bawah = opponent_map[i - 1]
+                    if cell_bawah['Damaged']:
+                        write_i(i)
+                        x = int(cell_bawah['X'])
+                        y = int(cell_bawah['Y'])
+                        i = x * map_size + y
+                        direction = 'South'
+                        isCheckerMode = False
+                    elif  (not cell_bawah['Damaged']) and (not cell_bawah['Missed']):
+                        isFoundValid = True
+                        valid_cell = cell_bawah['X'], cell_bawah['Y']
+
                 #check atas
-                if ((i % map_size) != (map_size-1)):
+                if ((i % map_size) != (map_size-1)) and not(isFoundValid) and isCheckerMode:
                     cell_atas = opponent_map[i+1]
                     if cell_atas['Damaged']:
                         write_i(i)
@@ -142,20 +157,6 @@ def greedy(opponent_map, energy, points):
                     elif (not cell_kanan['Damaged']) and (not cell_kanan['Missed']):
                         isFoundValid = True
                         valid_cell = cell_kanan['X'], cell_kanan['Y']
-
-                #check bawah
-                if (i % map_size) != 0 and not(isFoundValid) and isCheckerMode:
-                    cell_bawah = opponent_map[i - 1]
-                    if cell_bawah['Damaged']:
-                        write_i(i)
-                        x = int(cell_bawah['X'])
-                        y = int(cell_bawah['Y'])
-                        i = x * map_size + y
-                        direction = 'South'
-                        isCheckerMode = False
-                    elif  (not cell_bawah['Damaged']) and (not cell_bawah['Missed']):
-                        isFoundValid = True
-                        valid_cell = cell_bawah['X'], cell_bawah['Y']
 
         #!CheckerMode -> Aggresive Mode (Nyerang beruntun sesuai direction yang ada & direction ga mungkin 'Unknown')
         if (not isCheckerMode):
@@ -201,6 +202,8 @@ def greedy(opponent_map, energy, points):
             else:
                 if (direction != 'North'):
                     i = read_i()
+                if (direction == 'South'):
+                    isFoundValid = True
                 write_file(999, 999, 'Unknown')
 
         i+=1
