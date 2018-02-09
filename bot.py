@@ -102,23 +102,9 @@ def greedy(opponent_map, energy, points):
             elif (cell['Damaged']): #Bila (x,y) pernah hit (pertama kali kena), direction masih 'Unknown'
                 write_file(cell['X'], cell['Y'], 'Unknown')
 
-                #check bawah
-                if (i % map_size) != 0:
-                    cell_bawah = opponent_map[i - 1]
-                    if cell_bawah['Damaged']:
-                        write_i(i)
-                        x = int(cell_bawah['X'])
-                        y = int(cell_bawah['Y'])
-                        i = x * map_size + y
-                        direction = 'South'
-                        isCheckerMode = False
-                    elif  (not cell_bawah['Damaged']) and (not cell_bawah['Missed']):
-                        isFoundValid = True
-                        valid_cell = cell_bawah['X'], cell_bawah['Y']
-
-                #check atas
-                if ((i % map_size) != (map_size-1)) and not(isFoundValid) and isCheckerMode:
-                    cell_atas = opponent_map[i+1]
+                # check atas
+                if ((i % map_size) != (map_size - 1)):
+                    cell_atas = opponent_map[i + 1]
                     if cell_atas['Damaged']:
                         write_i(i)
                         x = int(cell_atas['X'])
@@ -129,6 +115,20 @@ def greedy(opponent_map, energy, points):
                     elif (not cell_atas['Damaged']) and (not cell_atas['Missed']):
                         isFoundValid = True
                         valid_cell = cell_atas['X'], cell_atas['Y']
+
+                # check bawah
+                if (i % map_size) != 0 and not (isFoundValid) and isCheckerMode:
+                    cell_bawah = opponent_map[i - 1]
+                    if cell_bawah['Damaged']:
+                        write_i(i)
+                        x = int(cell_bawah['X'])
+                        y = int(cell_bawah['Y'])
+                        i = x * map_size + y
+                        direction = 'South'
+                        isCheckerMode = False
+                    elif (not cell_bawah['Damaged']) and (not cell_bawah['Missed']):
+                        isFoundValid = True
+                        valid_cell = cell_bawah['X'], cell_bawah['Y']
 
                 #check kiri
                 if (i / map_size) >= 1 and not(isFoundValid) and isCheckerMode:
@@ -202,19 +202,50 @@ def greedy(opponent_map, energy, points):
             else:
                 if (direction != 'North'):
                     i = read_i()
-                if (direction == 'South'):
-                    isFoundValid = True
                 write_file(999, 999, 'Unknown')
 
         i+=1
 
+    #kalau checker udah habis (ga bisa digunain)
+    #Versi 1 (kalau mau diganti sok)
     if (i >= map_size*map_size):
-        targets = []
-        for cell in opponent_map:
+        write_i(99)
+        j = 0;
+        isFoundValid = False
+
+        #nyari sisa kapal musuh yang belum kena kalau belum menang
+        while (j < map_size*map_size) and not isFoundValid:
+            cell = opponent_map[j]
+
             if not cell['Damaged'] and not cell['Missed']:
-                valid_cell = cell['X'], cell['Y']
-                targets.append(valid_cell)
-        valid_cell = choice(targets)
+                #check atas ada kapal yang kena atau ga
+                if ((i % map_size) != (map_size - 1)):
+                    cell_atas = opponent_map[j+1]
+                    if (cell_atas['Damaged']):
+                        isFoundValid = True
+                        valid_cell = cell['X'], cell['Y']
+
+                # check bawah ada kapal yang kena atau ga
+                if ((i % map_size) != (map_size - 1)) and not isFoundValid:
+                    cell_bawah = opponent_map[j - 1]
+                    if (cell_bawah['Damaged']):
+                        isFoundValid = True
+                        valid_cell = cell['X'], cell['Y']
+
+                # check kiri ada kapal yang kena atau ga
+                if (i / map_size) >= 1 and not isFoundValid:
+                    cell_kiri= opponent_map[j - 10]
+                    if (cell_kiri['Damaged']):
+                        isFoundValid = True
+                        valid_cell = cell['X'], cell['Y']
+
+                # check kanan ada kapal yang kena atau ga
+                if (i + map_size) < (map_size * map_size) and not isFoundValid:
+                    cell_kanan = opponent_map[j + 10]
+                    if (cell_kanan['Damaged']):
+                        isFoundValid = True
+                        valid_cell = cell['X'], cell['Y']
+            j+=1
 
     output_shot(*valid_cell)
     return
